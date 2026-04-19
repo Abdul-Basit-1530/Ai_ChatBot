@@ -1,7 +1,7 @@
 import React from 'react';
-import { Plus, MessageSquare, Settings, User, Trash2, Activity, LayoutDashboard, Database } from 'lucide-react';
+import { Plus, MessageSquare, Settings, User, Trash2, LayoutDashboard, X } from 'lucide-react';
 
-const Sidebar = ({ history = [], onSelectConversation, onNewChat, onDeleteConversation, activeId }) => {
+const Sidebar = ({ history = [], onSelectConversation, onNewChat, onDeleteConversation, activeId, onClose }) => {
   
   const categorizeHistory = () => {
     const today = [];
@@ -23,19 +23,42 @@ const Sidebar = ({ history = [], onSelectConversation, onNewChat, onDeleteConver
 
   return (
     <aside className="glass" style={{
-      width: 'var(--sidebar-width)',
+      width: '100%',
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
       padding: '1rem',
-      zIndex: 10,
-      gap: '1.5rem'
+      gap: '1.5rem',
+      position: 'relative'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem' }}>
-        <div style={{ background: 'var(--accent-gradient)', padding: '6px', borderRadius: '8px' }}>
-          <LayoutDashboard size={20} color="white" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ 
+            background: 'var(--accent-gradient)', 
+            padding: '6px', 
+            borderRadius: '8px',
+            boxShadow: '0 0 15px rgba(139, 92, 246, 0.4)' 
+          }}>
+            <LayoutDashboard size={20} color="white" />
+          </div>
+          <span style={{ fontWeight: '700', fontSize: '1.2rem', letterSpacing: '-0.02em' }}>Dashboard</span>
         </div>
-        <span style={{ fontWeight: '700', fontSize: '1.2rem', letterSpacing: '-0.02em' }}>Dashboard</span>
+        
+        {/* Mobile Close Button */}
+        <button 
+          onClick={onClose}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            padding: '4px',
+            display: 'none' // Default hidden, shown via media query or inline check
+          }}
+          className="mobile-close-btn"
+        >
+          <X size={20} />
+        </button>
       </div>
 
       <button 
@@ -64,7 +87,6 @@ const Sidebar = ({ history = [], onSelectConversation, onNewChat, onDeleteConver
       </button>
 
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingRight: '4px' }}>
-        
         {today.length > 0 && (
           <div>
             <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem', paddingLeft: '0.5rem' }}>Today</p>
@@ -87,12 +109,10 @@ const Sidebar = ({ history = [], onSelectConversation, onNewChat, onDeleteConver
         )}
       </div>
 
- 
-
       <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-glass)', display: 'flex', alignItems: 'center', justifyItems: 'center', border: '1px solid var(--border-glass)' }}>
-            <User size={18} style={{ margin: 'auto' }} />
+          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-glass)' }}>
+            <User size={18} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Abdul Basit</span>
@@ -101,6 +121,12 @@ const Sidebar = ({ history = [], onSelectConversation, onNewChat, onDeleteConver
           <Settings size={16} style={{ marginLeft: 'auto', color: 'var(--text-muted)' }} />
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-close-btn { display: flex !important; }
+        }
+      `}</style>
     </aside>
   );
 };

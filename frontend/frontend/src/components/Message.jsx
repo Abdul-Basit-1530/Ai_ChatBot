@@ -8,11 +8,23 @@ import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-const Message = ({ role, content, animate = false }) => {
+const Message = ({ role, content, animate = false, timestamp }) => {
   const isAI = role === 'ai';
   const [copied, setCopied] = React.useState(false);
   const [displayedContent, setDisplayedContent] = React.useState(animate ? '' : content);
   const [isTyping, setIsTyping] = React.useState(animate);
+
+  const formatTime = (ts) => {
+    if (!ts) return '';
+    try {
+      // If it looks like an ISO string or a date object
+      const date = new Date(ts);
+      if (isNaN(date.getTime())) return ts; // Return as-is if fallback
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return ts;
+    }
+  };
 
   React.useEffect(() => {
     if (!animate) {
@@ -29,7 +41,7 @@ const Message = ({ role, content, animate = false }) => {
         clearInterval(interval);
         setIsTyping(false);
       }
-    }, 15); // Natural typing speed
+    }, 15);
 
     return () => clearInterval(interval);
   }, [content, animate]);
@@ -47,37 +59,69 @@ const Message = ({ role, content, animate = false }) => {
       transition={{ duration: 0.3 }}
       style={{
         display: 'flex',
-        gap: '1rem',
-        padding: '1.5rem',
+        gap: '0.75rem',
+        padding: '1.25rem 1rem',
         backgroundColor: isAI ? 'var(--bg-surface)' : 'transparent',
         borderBottom: isAI ? '1px solid var(--border-glass)' : 'none',
         width: '100%',
+        position: 'relative'
       }}
     >
       <div style={{
         width: '32px',
         height: '32px',
-        borderRadius: '4px',
+        borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
         background: isAI ? 'var(--accent-gradient)' : 'var(--bg-glass)',
-        color: 'white'
+        color: 'white',
+        boxShadow: isAI ? '0 4px 12px rgba(139, 92, 246, 0.2)' : 'none'
       }}>
-        {isAI ? <Bot size={20} /> : <User size={20} />}
+        {isAI ? <Bot size={18} /> : <User size={18} />}
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', overflow: 'hidden' }}>
-        <p style={{ 
-          fontSize: '0.75rem', 
-          fontWeight: 'bold', 
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em'
-        }}>
-          {isAI ? 'Assistant' : 'You'}
-        </p>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ 
+              fontSize: '0.7rem', 
+              fontWeight: 'bold', 
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              {isAI ? 'Assistant' : 'You'}
+            </span>
+            {timestamp && <span className="message-timestamp">{formatTime(timestamp)}</span>}
+          </div>
+
+          {isAI && (
+            <button 
+              onClick={() => handleCopy(content)}
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid var(--border-glass)',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '0.7rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s',
+                touchAction: 'manipulation'
+              }}
+              onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+              onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+            >
+              {copied ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
+              <span className="logo-text">{copied ? 'Copied!' : 'Copy'}</span>
+            </button>
+          )}
+        </div>
         
         <div className="prose">
           <ReactMarkdown
@@ -104,7 +148,7 @@ const Message = ({ role, content, animate = false }) => {
                       <span>{match[1].toUpperCase()}</span>
                       <button 
                         onClick={() => handleCopy(String(children).replace(/\n$/, ''))}
-                        style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '8px' }}
                       >
                         {copied ? <Check size={12} /> : <Copy size={12} />}
                         {copied ? 'Copied' : 'Copy'}
@@ -149,10 +193,10 @@ const Message = ({ role, content, animate = false }) => {
             border: 'none',
             color: 'var(--text-muted)',
             cursor: 'pointer',
-            padding: '4px',
-            borderRadius: '4px',
+            padding: '12px 8px',
+            borderRadius: '8px',
             transition: 'color 0.2s',
-            marginTop: '1.5rem'
+            marginTop: '1.25rem'
           }}
           title="Copy message"
         >

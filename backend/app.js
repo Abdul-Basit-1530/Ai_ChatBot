@@ -29,10 +29,10 @@ app.post("/api/ai", async (req, res) => {
       return res.status(400).json({ error: "Prompt is required" });
     }
 
-    // 1. Get Chat History for Context
+
     let chatHistory = [];
     let conversation;
-    
+
     if (conversationId) {
       conversation = await Conversation.findById(conversationId);
       if (conversation) {
@@ -43,19 +43,19 @@ app.post("/api/ai", async (req, res) => {
       }
     }
 
-    // 2. Construct messages array for AI
+
     const apiMessages = [
-      { 
-        role: "system", 
+      {
+        role: "system",
         content: `You are a friendly and conversational AI assistant. Keep responses short and natural for simple messages like greetings.
 When explaining technical concepts, provide accurate and clear explanations using correct technical terms and definitions. Always include a simple, illustrative example to help the user understand the concept.
-Maintain conversation context, provide structured answers, and assist with MERN application development and software engineering questions with expert-level precision.` 
+Maintain conversation context, provide structured answers, and assist with MERN application development and software engineering questions with expert-level precision.`
       },
       ...chatHistory,
       { role: "user", content: prompt }
     ];
 
-    // 3. Get AI Response from Groq
+
     let groqResponse;
     try {
       groqResponse = await axios.post(
@@ -79,7 +79,8 @@ Maintain conversation context, provide structured answers, and assist with MERN 
     const aiReply = groqResponse.data.choices[0].message.content;
 
     if (!conversation) {
-      const title = prompt.length > 30 ? prompt.substring(0, 30) + "..." : prompt;
+      const chatTitle = prompt.trim();
+      const title = chatTitle.length > 25 ? chatTitle.substring(0, 25) + "..." : chatTitle;
       conversation = new Conversation({ title });
     }
 
@@ -91,9 +92,9 @@ Maintain conversation context, provide structured answers, and assist with MERN 
 
   } catch (error) {
     console.error("DEBUG - Error in /api/ai:", error.response?.data || error.message || error);
-    res.status(500).json({ 
-      error: "Operation failed", 
-      details: error.response?.data?.error?.message || error.message 
+    res.status(500).json({
+      error: "Operation failed",
+      details: error.response?.data?.error?.message || error.message
     });
   }
 });
