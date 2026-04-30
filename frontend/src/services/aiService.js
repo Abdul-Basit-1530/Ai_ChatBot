@@ -64,16 +64,16 @@ export const askAI = async (prompt, conversationId = null) => {
   }
 };
 
+
 export const getHistory = async () => {
   try {
     const response = await api.get("/history");
-    return response.data;
+    return Array.isArray(response.data) ? response.data : []; // Force array
   } catch (error) {
     console.error("Error fetching history:", error);
-    return [];
+    return []; // Return empty array on error
   }
 };
-
 export const getConversation = async (id) => {
   try {
     const response = await api.get(`/history/${id}`);
