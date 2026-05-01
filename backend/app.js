@@ -171,10 +171,11 @@ app.use((req, res, next) => {
 // REMOVED: app.options('(.*)', cors()) -> This was causing the crash.
 // The app.use(cors(...)) above already handles this safely.
 
-// 3. MONGODB CONNECTION
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch(err => console.error("MongoDB connection error:", err));
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000
+})
+.then(() => console.log("Connected to MongoDB"))
+.catch(err => console.error("MongoDB error:", err));
 
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
@@ -211,19 +212,20 @@ app.post("/api/ai", async (req, res) => {
       { role: "user", content: prompt }
     ];
 
-    const groqResponse = await axios.post(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        model: "llama-3.1-8b-instant",
-        messages: apiMessages,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+   const groqResponse = await axios.post(
+  "https://api.groq.com/openai/v1/chat/completions",
+  {
+    model: "llama-3.1-8b-instant",
+    messages: apiMessages,
+  },
+  {
+    headers: {
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    timeout: 10000 // 👈 MUST ADD
+  }
+);
 
     const aiReply = groqResponse.data.choices[0].message.content;
 
@@ -239,7 +241,7 @@ app.post("/api/ai", async (req, res) => {
     res.json({ reply: aiReply, conversationId: conversation._id });
 
   } catch (error) {
-    console.error("Error in /api/ai:", error.message);
+    console.error("FULL ERROR:", error);
     res.status(500).json({ 
       error: "Operation failed", 
       details: error.response?.data?.error?.message || error.message 
