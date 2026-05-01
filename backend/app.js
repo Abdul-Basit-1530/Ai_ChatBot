@@ -152,31 +152,31 @@ dotenv.config();
 
 const app = express();
 
-// 1. CORS Configuration (Sabse upar rakhen)
+// 1. GLOBAL CORS CONFIGURATION
+// This automatically handles OPTIONS requests for all your routes.
 app.use(cors({
-  origin: "https://ai-chat-bot-six-iota.vercel.app", // Behtar hai ke specific domain allow karen
+  origin: "https://ai-chat-bot-six-iota.vercel.app",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
 
-// 2. Logging Middleware
+// 2. LOGGING MIDDLEWARE
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
-// 3. OPTIONS Route FIX (PathError khatam karne ke liye)
-// Naye Express versions mein '*' ki jagah '(.*)' ya direct middleware use hota hai
-app.options('(.*)', cors());
+// REMOVED: app.options('(.*)', cors()) -> This was causing the crash.
+// The app.use(cors(...)) above already handles this safely.
 
-// 4. MongoDB Connection
+// 3. MONGODB CONNECTION
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("Connected to MongoDB"))
   .catch(err => console.error("MongoDB connection error:", err));
 
-// 5. AI Chat Route
+// 4. AI CHAT ROUTE
 app.post("/api/ai", async (req, res) => {
   try {
     const { prompt, conversationId } = req.body;
@@ -201,7 +201,7 @@ app.post("/api/ai", async (req, res) => {
     const apiMessages = [
       {
         role: "system",
-        content: "You are a friendly AI assistant helping with MERN stack development."
+        content: "You are a helpful AI assistant."
       },
       ...chatHistory,
       { role: "user", content: prompt }
@@ -243,7 +243,7 @@ app.post("/api/ai", async (req, res) => {
   }
 });
 
-// 6. History Routes
+// 5. HISTORY ROUTES
 app.get("/api/history", async (req, res) => {
   try {
     const history = await Conversation.find({}, "title updatedAt").sort({ updatedAt: -1 });
@@ -272,7 +272,8 @@ app.delete("/api/history/:id", async (req, res) => {
   }
 });
 
-// 7. Port Configuration (Railway compatibility)
+// 6. PORT CONFIGURATION
+// Binding to 0.0.0.0 is critical for Railway's network to find your app.
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
