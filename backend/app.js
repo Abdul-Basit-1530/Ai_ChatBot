@@ -141,11 +141,10 @@
 //   console.log("Server running on port 5000");
 // });
 
-
 const express = require("express");
 const axios = require("axios");
 const dotenv = require("dotenv");
-const cors = require("cors"); // Sirf ek baar declare karen
+const cors = require("cors");
 const mongoose = require("mongoose");
 const Conversation = require("./models/Conversation");
 
@@ -155,28 +154,29 @@ const app = express();
 
 // 1. CORS Configuration (Sabse upar rakhen)
 app.use(cors({
-  origin: "*", // Production mein isay 'https://ai-chat-bot-six-iota.vercel.app' kar dena behtar hai
+  origin: "https://ai-chat-bot-six-iota.vercel.app", // Behtar hai ke specific domain allow karen
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
 
-// Logging Middleware
+// 2. Logging Middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
-// Explicitly handle OPTIONS
-app.options('*', cors());
+// 3. OPTIONS Route FIX (PathError khatam karne ke liye)
+// Naye Express versions mein '*' ki jagah '(.*)' ya direct middleware use hota hai
+app.options('(.*)', cors());
 
-// 2. MongoDB Connection
+// 4. MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("Connected to MongoDB"))
   .catch(err => console.error("MongoDB connection error:", err));
 
-// 3. AI Route
+// 5. AI Chat Route
 app.post("/api/ai", async (req, res) => {
   try {
     const { prompt, conversationId } = req.body;
@@ -188,23 +188,20 @@ app.post("/api/ai", async (req, res) => {
     let chatHistory = [];
     let conversation;
 
-    if (conversationId) {
-      // Valid ObjectId check taake crash na ho
-      if (mongoose.Types.ObjectId.isValid(conversationId)) {
-        conversation = await Conversation.findById(conversationId);
-        if (conversation) {
-          chatHistory = conversation.messages.map(m => ({
-            role: m.role === "ai" ? "assistant" : "user",
-            content: m.content
-          }));
-        }
+    if (conversationId && mongoose.Types.ObjectId.isValid(conversationId)) {
+      conversation = await Conversation.findById(conversationId);
+      if (conversation) {
+        chatHistory = conversation.messages.map(m => ({
+          role: m.role === "ai" ? "assistant" : "user",
+          content: m.content
+        }));
       }
     }
 
     const apiMessages = [
       {
         role: "system",
-        content: `You are a friendly and conversational AI assistant. Help with MERN stack and software engineering.`
+        content: "You are a friendly AI assistant helping with MERN stack development."
       },
       ...chatHistory,
       { role: "user", content: prompt }
@@ -239,11 +236,14 @@ app.post("/api/ai", async (req, res) => {
 
   } catch (error) {
     console.error("Error in /api/ai:", error.message);
-    res.status(500).json({ error: "Operation failed", details: error.message });
+    res.status(500).json({ 
+      error: "Operation failed", 
+      details: error.response?.data?.error?.message || error.message 
+    });
   }
 });
 
-// 4. History Routes
+// 6. History Routes
 app.get("/api/history", async (req, res) => {
   try {
     const history = await Conversation.find({}, "title updatedAt").sort({ updatedAt: -1 });
@@ -272,7 +272,7 @@ app.delete("/api/history/:id", async (req, res) => {
   }
 });
 
-// 5. Port Configuration (Railway compatibility ke liye lazmi hai)
+// 7. Port Configuration (Railway compatibility)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
