@@ -2,15 +2,17 @@
 
 import axios from "axios";
 
-// Vite automatically reads from .env using import.meta.env
-// Agar .env mein kuch nahi milega to ye default localhost use karega
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const API_URL = `${BASE_URL}/api`;
+// Sabse pehle check karen ke URL kahan se aa raha hai
+const BASE_URL = import.meta.env.VITE_API_URL; 
+
+const api = axios.create({
+  // Yahan dhyan den: BASE_URL ke shuru mein https hona lazmi hai
+  baseURL: `${BASE_URL}/api`, 
+});
+
+// ... baaki code same rahega
 
 // Axios instance for better reusability
-const api = axios.create({
-  baseURL: API_URL,
-});
 
 export const askAI = async (prompt, conversationId = null) => {
   try {
