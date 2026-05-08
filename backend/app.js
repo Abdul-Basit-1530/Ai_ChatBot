@@ -35,6 +35,10 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "AI backend running" });
+});
+
 app.post("/api/ai", async (req, res) => {
   try {
     const { prompt, conversationId } = req.body;
