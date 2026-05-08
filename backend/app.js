@@ -8,20 +8,32 @@ const Conversation = require("./models/Conversation");
 dotenv.config();
 
 const app = express();
+
+const allowedOrigins = [
+  "https://ai-chat-bot-six-iota.vercel.app",
+  "http://localhost:5173",
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS policy violation: ${origin}`));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
-
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ["https://ai-chat-bot-six-iota.vercel.app", "http://localhost:5173"]
-    : "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
 
 app.post("/api/ai", async (req, res) => {
   try {
@@ -128,10 +140,6 @@ app.delete("/api/history/:id", async (req, res) => {
   }
 });
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
-});
-
 // Start the server
 (async () => {
   try {
@@ -140,20 +148,9 @@ app.listen(5000, () => {
   } catch (err) {
     console.error("MongoDB connection error:", err);
   }
+
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 })();
-
-app.delete("/api/history/:id", async (req, res) => {
-  try {
-    await Conversation.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to delete" });
-  }
-});
-
-// 6. PORT CONFIGURATION
-// Binding to 0.0.0.0 is critical for Railway's network to find your app.
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-});
